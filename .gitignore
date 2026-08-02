@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Django
+resume_summarizer_backend/db.sqlite3
+resume_summarizer_backend/resumes/*
+!resume_summarizer_backend/resumes/.gitkeep
+resume_summarizer_backend/saved_jsons/*
+!resume_summarizer_backend/saved_jsons/.gitkeep
+
+# secrets
+.env
+*.env
+
+# Node
+node_modules/
+resume_summarizer_frontend/build/
