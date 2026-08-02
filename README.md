@@ -1,120 +1,65 @@
+# Resume Summarizer
 
+A full-stack app that takes a resume PDF and, using GPT, extracts its key sections (skills, education, projects, experience), writes a short summary, and generates interview questions based on it — with a page to answer those questions and save the answers.
 
-# AI-Powered Resume Summarizer
+**Stack:** Django REST Framework backend · React frontend · OpenAI GPT-3.5
 
-This project is a web application that allows users to upload resumes (in PDF format), extracts key details like skills, experience, and education, generates a summary, and creates personalized interview questions using OpenAI's GPT model.
+## How it works
 
-## Features:
-- Upload your resume (PDF)
-- Extracts key sections like Skills, Experience, Education, and Projects
-- Generates a concise resume summary
-- Generates interview questions based on the extracted details
-
----
-
-## Prerequisites:
-- Python 3.7+
-- Node.js and npm (for the React frontend)
-- [OpenAI API Key](https://beta.openai.com/signup/)
-
----
-
-## Installation and Setup
-
-### 1. Backend (Python/Django)
-1. Clone this repository.
-2. Navigate to the backend folder.
-   
-   ```bash
-   cd resume_summarizer_backend
-   ```
-3. Create and activate a virtual environment:
-   
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use venv\Scripts\activate
-   ```
-
-4. Install the required dependencies:
-   
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-5. Add your OpenAI API key by editing the `openai_integration.py` file:
-   
-   ```python
-   openai.api_key = 'ADD-YOUR-OPEN-AI-API-KEY-HERE'
-   ```
-
-6. Run the Django development server:
-
-   ```bash
-   python manage.py runserver
-   ```
-
----
-
-### 2. Frontend (React)
-1. Navigate to the frontend folder:
-   
-   ```bash
-   cd resume_summarizer_frontend
-   ```
-
-2. Install the required dependencies:
-   
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-
-   ```bash
-   npm start
-   ```
-
-
-
-## Environment Variables
-
-Make sure you have the following environment variables set up:
-
-- **For OpenAI API Key:**
-  
-  In `project\resume_summarizer_backend\gpt_integration\openai_integration.py`, replace the placeholder with your actual OpenAI API key:
-
-  ```python
-  openai.api_key = 'ADD-YOUR-OPEN-AI-API-KEY-HERE'
-  ```
-
----
-
-## Usage
-
-1. Navigate to `http://localhost:3000` in your browser.
-2. Upload your resume in PDF format.
-3. View the extracted resume summary and generated interview questions.
-4. Toggle between light and dark mode to see dynamic background changes.
-5. The Uploaded Resumes are saved in `project\resume_summarizer_backend\resumes`.
-6. The JSON files are saved in `project\resume_summarizer_backend\saved_jsons`.
-
-
----
-
-## Project Structure
+1. **Upload** — the frontend posts a PDF to the backend, which extracts the raw text with `pdfminer.six`.
+2. **Summarize** — that text goes to GPT-3.5 with a prompt asking for extracted sections, a summary, and 5 interview questions. The response is parsed into structured JSON and saved to disk.
+3. **Review** — the frontend shows the summary, then the generated questions with input boxes for answers, which get POSTed back and merged into the saved JSON.
 
 ```
-backend/               # Django project for backend (resume processing, OpenAI integration)
-frontend/              # React project for frontend
-saved_jsons/           # Directory for saving processed resume JSON files
-public/                # Directory for public assets (background images)
-README.md              # This file
+resume_summarizer_backend/    Django REST API
+  api/                        views: upload, summary, questions, save-answers
+  gpt_integration/             PDF text extraction + OpenAI call
+  resumes/                     uploaded PDFs (gitignored)
+  saved_jsons/                 per-resume summary/questions/answers (gitignored)
+resume_summarizer_frontend/   React app (upload → summary → questions flow)
 ```
 
----
+## Setup
 
+### Backend
 
+```bash
+cd resume_summarizer_backend
+python -m venv .venv
+source .venv/bin/activate  # .venv\Scripts\activate on Windows
 
+pip install -r ../requirements.txt
+cp .env.example .env   # then add your OpenAI API key
 
+python manage.py migrate
+python manage.py runserver
+```
 
+### Frontend
+
+```bash
+cd resume_summarizer_frontend
+npm install
+cp .env.example .env   # defaults to http://localhost:8000, override if needed
+npm start
+```
+
+Open `http://localhost:3000`, upload a PDF resume, and you'll be walked through the summary and interview-question pages.
+
+## Running tests
+
+```bash
+# backend
+cd resume_summarizer_backend
+pip install -r ../requirements.txt
+pytest
+
+# frontend
+cd resume_summarizer_frontend
+npm test -- --watchAll=false
+```
+
+## Notes
+
+- The upload endpoint returns a friendly error (HTTP 503) if `OPENAI_API_KEY` isn't set, instead of crashing.
+- Uploaded resumes and generated JSON live under `resumes/` and `saved_jsons/` — both are local/gitignored, not persisted anywhere durable. This is a demo app, not built for multi-user production use (no auth, no database-backed storage of results).
