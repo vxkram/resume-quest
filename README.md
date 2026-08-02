@@ -4,6 +4,10 @@ A full-stack app that takes a resume PDF and, using GPT, extracts its key sectio
 
 **Stack:** Django REST Framework backend · React frontend · OpenAI GPT-3.5
 
+| Light mode | Dark mode |
+|---|---|
+| ![Upload page, light mode](docs/screenshots/upload-light.png) | ![Upload page, dark mode](docs/screenshots/upload-dark.png) |
+
 ## How it works
 
 1. **Upload** — the frontend posts a PDF to the backend, which extracts the raw text with `pdfminer.six`.
