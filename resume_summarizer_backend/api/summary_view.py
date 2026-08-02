@@ -1,5 +1,6 @@
 import os
 import json
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,7 +8,10 @@ from rest_framework import status
 class SummaryView(APIView):
     def get(self, request, file_name, *args, **kwargs):
 
-        json_file_path = os.path.join('saved_jsons', f"{file_name}.json")  
+        if not file_name.endswith('.json'):
+            file_name += '.json'
+
+        json_file_path = os.path.join(settings.SAVED_JSONS_ROOT, file_name)
 
         if os.path.exists(json_file_path):
             with open(json_file_path, 'r') as json_file:

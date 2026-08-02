@@ -1,13 +1,17 @@
 import os
 import json
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 class SaveAnswersView(APIView):
     def post(self, request, file_name, *args, **kwargs):
-        json_file_path = os.path.join('saved_jsons', f"{file_name}.json")
-        
+        if not file_name.endswith('.json'):
+            file_name += '.json'
+
+        json_file_path = os.path.join(settings.SAVED_JSONS_ROOT, file_name)
+
 
         if not os.path.exists(json_file_path):
             return Response({"error": "JSON file not found."}, status=status.HTTP_404_NOT_FOUND)
