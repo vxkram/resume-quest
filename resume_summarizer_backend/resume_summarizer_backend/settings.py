@@ -13,18 +13,24 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$7qj5txp7-wut-s=4nq@5doy&5doi%*^3(6rsww$h(o2^sjv6*'
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-$7qj5txp7-wut-s=4nq@5doy&5doi%*^3(6rsww$h(o2^sjv6*",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = []
 
@@ -134,6 +140,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = r'D:/project/resume_summarizer_backend/resumes' 
+MEDIA_ROOT = BASE_DIR / 'resumes'
+SAVED_JSONS_ROOT = BASE_DIR / 'saved_jsons'
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
