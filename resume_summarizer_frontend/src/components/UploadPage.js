@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { API_BASE_URL } from '../api';
 
 const UploadPage = ({ isDarkMode }) => {
   const [file, setFile] = useState(null);
@@ -29,7 +30,7 @@ const UploadPage = ({ isDarkMode }) => {
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://localhost:8000/upload/', {
+      const response = await fetch(`${API_BASE_URL}/upload/`, {
         method: 'POST',
         body: formData,
       });
@@ -37,11 +38,11 @@ const UploadPage = ({ isDarkMode }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccessMessage(data.message);
+        setSuccessMessage('Resume uploaded successfully!');
         setError('');
-        const fileName = file.name.split('.')[0]; // Extract the file name without extension
-        // Navigate to the Summary Page with the file name as a parameter
-        navigate(`/summary/${fileName}`);
+        // Use the actual saved file name (may differ from the upload if
+        // a resume with the same name was already uploaded before).
+        navigate(`/summary/${data.file_name}`);
       } else {
         setError(data.error || 'Something went wrong');
       }

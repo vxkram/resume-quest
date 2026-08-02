@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { API_BASE_URL } from '../api';
 
 const QuestionsPage = () => {
   const [questions, setQuestions] = useState([]);
@@ -9,37 +10,19 @@ const QuestionsPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch the questions from the backend
-    // const fetchQuestions = async () => {
-    //   try {
-    //     const response = await fetch(`http://localhost:8000/upload/questions/${fileName}`);
-    //     if (!response.ok) {
-    //       throw new Error('Error fetching questions');
-    //     }
-    //     const data = await response.json();
-    //     setQuestions(data.questions);  
-    //     setAnswers(data.user_answers.answers_to_questions || []);  
-    //   } catch (err) {
-    //     setError('Error fetching questions');
-    //   }
-    // };
-
     const fetchQuestions = async () => {
-        try {
-          const response = await fetch(`http://localhost:8000/upload/questions/${fileName}.json`);
-          if (!response.ok) {
-            throw new Error('Error fetching questions');
-          }
-          const data = await response.json();
-          console.log(data); 
-          setQuestions(data.questions || []); 
-          setAnswers(data.user_answers?.answers_to_questions || []); 
-        } catch (err) {
-          console.error(err); 
-          setError('Error fetching questions');
+      try {
+        const response = await fetch(`${API_BASE_URL}/upload/questions/${fileName}/`);
+        if (!response.ok) {
+          throw new Error('Error fetching questions');
         }
-      };
-      
+        const data = await response.json();
+        setQuestions(data.questions || []);
+        setAnswers(data.user_answers?.answers_to_questions || []);
+      } catch (err) {
+        setError('Error fetching questions');
+      }
+    };
 
     fetchQuestions();
   }, [fileName]);
@@ -54,7 +37,7 @@ const QuestionsPage = () => {
   
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/upload/save-answers/${fileName}/`, {
+      const response = await fetch(`${API_BASE_URL}/upload/save-answers/${fileName}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +96,7 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     height: '100vh',
-    backgroundImage: `url(${process.env.PUBLIC_URL + '/image.png'})`, 
+    backgroundColor: '#f0f0f0',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },

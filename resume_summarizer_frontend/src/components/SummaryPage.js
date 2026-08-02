@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../api';
 
 const SummaryPage = () => {
   const { fileName } = useParams();  
@@ -11,7 +12,7 @@ const SummaryPage = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/upload/summary/${fileName}/`, {
+        const response = await fetch(`${API_BASE_URL}/upload/summary/${fileName}/`, {
           method: 'GET',
         });
 
@@ -63,8 +64,8 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100vh', 
-    backgroundImage: `url(${process.env.PUBLIC_URL + '/image.png'})`, 
+    height: '100vh',
+    backgroundColor: '#f0f0f0',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },
