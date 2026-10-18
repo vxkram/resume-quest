@@ -1,0 +1,35 @@
+Alex Rivera
+Machine Learning Engineer
+alex.rivera@example.com | +1 555-010-4477 | linkedin.com/in/example-alex-rivera | github.com/example-alex-rivera
+
+Summary
+Machine learning engineer with four years of experience shipping recommendation and forecasting models to production. Comfortable across the stack, from data pipelines to model serving.
+
+Experience
+Machine Learning Engineer, Brightline Retail (fictional) | Mar 2022 - Present
+- Built a PyTorch recommendation model that lifted click-through rate by 14% across 3 million weekly users.
+- Designed a FastAPI model-serving layer on Kubernetes that cut p95 latency from 420 ms to 95 ms.
+- Migrated nightly feature pipelines from cron scripts to Airflow, reducing failed runs by 80%.
+- Mentored two junior engineers through their first production model launches.
+
+Data Scientist, Northwind Analytics (fictional) | Jun 2019 - Aug 2021
+- Developed demand-forecasting models in Python and scikit-learn for 1,200 stores.
+- Wrote SQL transformations in PostgreSQL that replaced 40 hand-maintained spreadsheets.
+- Presented weekly forecast accuracy reviews to the operations leadership team.
+
+Projects
+Open-source drift monitor
+- Created a small Python library that flags feature drift in production models using population stability index.
+- Packaged it with Docker and set up GitHub Actions CI with 90% test coverage.
+
+Personal finance dashboard
+- Built a React and TypeScript dashboard backed by a Django REST API for tracking monthly budgets.
+
+Skills
+Python, SQL, PyTorch, scikit-learn, pandas, FastAPI, Django, React, TypeScript, Docker, Kubernetes, AWS, PostgreSQL, Redis, Airflow, Git
+
+Certifications
+AWS Certified Machine Learning - Specialty (2023)
+
+Education
+B.Sc. Computer Science, Lakeside University (fictional) | 2015 - 2019
