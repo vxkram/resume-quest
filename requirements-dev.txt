@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest==9.1.1
+pytest-django==4.14.0
+# only for samples/make_sample.py
+reportlab==5.0.1

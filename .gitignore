@@ -4,13 +4,13 @@ __pycache__/
 venv/
 .venv/
 *.egg-info/
+.pytest_cache/
 
-# Django
+# Local data: analyses (with résumé text) live in this SQLite file
 resume_summarizer_backend/db.sqlite3
-resume_summarizer_backend/resumes/*
-!resume_summarizer_backend/resumes/.gitkeep
-resume_summarizer_backend/saved_jsons/*
-!resume_summarizer_backend/saved_jsons/.gitkeep
+# Left over from v1, which saved uploads and results here
+resume_summarizer_backend/resumes/
+resume_summarizer_backend/saved_jsons/
 
 # secrets
 .env
@@ -18,4 +18,5 @@ resume_summarizer_backend/saved_jsons/*
 
 # Node
 node_modules/
-resume_summarizer_frontend/build/
+resume_summarizer_frontend/dist/
+.DS_Store

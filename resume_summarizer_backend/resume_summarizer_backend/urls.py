@@ -1,12 +1,19 @@
-from django.urls import path
-from api.resume_upload_view import ResumeUploadView
-from api.summary_view import SummaryView
-from api.questions_view import QuestionsView 
-from api.answers_view import SaveAnswersView
+from django.urls import include, path, re_path
+
+from analyzer import views
+
+api = [
+    path("providers/", views.ProvidersView.as_view(), name="providers"),
+    path("providers/<str:provider_id>/models/", views.ProviderModelsView.as_view(), name="provider-models"),
+    path("analyses/", views.AnalysisListView.as_view(), name="analyses"),
+    path("analyses/<uuid:pk>/", views.AnalysisDetailView.as_view(), name="analysis"),
+    path("analyses/<uuid:pk>/quiz/", views.QuizCreateView.as_view(), name="quiz-create"),
+    path("analyses/<uuid:pk>/interview/", views.InterviewView.as_view(), name="interview"),
+    path("quizzes/<uuid:pk>/", views.QuizDetailView.as_view(), name="quiz"),
+    path("quizzes/<uuid:pk>/submit/", views.QuizSubmitView.as_view(), name="quiz-submit"),
+]
 
 urlpatterns = [
-    path('upload/', ResumeUploadView.as_view(), name='resume-upload'),
-    path('upload/summary/<str:file_name>/', SummaryView.as_view(), name='summary'),
-    path('upload/questions/<str:file_name>/', QuestionsView.as_view(), name='questions'),
-    path('upload/save-answers/<str:file_name>/', SaveAnswersView.as_view(), name='save-answers'),
+    path("api/", include(api)),
+    re_path(r"^(?!api/)(?P<path>.*)$", views.frontend, name="frontend"),
 ]
