@@ -7,7 +7,19 @@ A local résumé analyser with a pixel-art RPG interface. Drop in a PDF or DOCX 
 - **How good the résumé is as a document:** sections, contact details, quantified bullets, action verbs, length and employment gaps, ranked S to D.
 - **How to test the person:** a generated multiple-choice quiz that compares "claimed" with "demonstrated", interview questions from warm-up to deep dive, and hand-picked links to real tests and certifications.
 
-It works with **OpenAI, Anthropic, Google Gemini, or a local Ollama model** (free, no key). Cloud API keys are pasted into the page, held only in that tab's memory, and never stored anywhere. See [API key safety](#api-key-safety).
+It works with **OpenAI, Anthropic, Google Gemini, Groq, OpenRouter, or a local Ollama model**. Cloud API keys are pasted into the page, held only in that tab's memory, and never stored anywhere. See [API key safety](#api-key-safety).
+
+### Free ways to run it
+
+| Provider | Cost | Notes |
+|---|---|---|
+| **Ollama** | Free, no key | Runs on your own computer. Nothing leaves your machine. |
+| **Google Gemini** | [Free key](https://aistudio.google.com/apikey) | Several Flash models have a free tier (default `gemini-2.5-flash`). Google may use free-tier prompts to improve its products. |
+| **Groq** | [Free key](https://console.groq.com/keys) | Very fast. Default `openai/gpt-oss-120b`, which enforces the JSON schema. Other Groq models run in plain JSON mode. |
+| **OpenRouter** | [Free key](https://openrouter.ai/keys) | Default `openrouter/free` picks a free model that supports structured output. Free models allow 20 requests a minute and 50 a day; one analysis uses one request. |
+| OpenAI, Anthropic | Paid | An API key with billing set up. A ChatGPT or Claude subscription doesn't include API credit. |
+
+Free tiers change often, so check each provider's limits before relying on them. When a free quota runs out, the app says so instead of telling you to retry.
 
 **Stack:** Django 5.2 + Django REST Framework · React 19 + Vite · SQLite · pdfminer.six / python-docx
 
@@ -39,7 +51,7 @@ upload ─► text extraction ─► LLM (JSON schema) ─► verify + score ─
 ```
 
 1. **Extraction.** The file type is detected from its bytes (not its name or content type), parsed in memory, and thrown away. Only the text is kept. Unmapped PDF glyphs like `(cid:127)` are turned back into bullets.
-2. **One structured LLM call.** Each provider's native structured-output mode returns JSON matching a fixed schema: OpenAI `json_schema` (strict), Anthropic `output_config.format`, Gemini `response_json_schema`, Ollama `format`. Pydantic validates the result; a malformed answer is retried once, then reported cleanly.
+2. **One structured LLM call.** Each provider's native structured-output mode returns JSON matching a fixed schema: OpenAI `json_schema` (strict), Anthropic `output_config.format`, Gemini `response_json_schema`, Groq and OpenRouter `response_format` json_schema (OpenRouter only routes to upstreams that honour it), Ollama `format`. Pydantic validates the result; a malformed answer is retried once, then reported cleanly.
 3. **Evidence is checked, not trusted.** A skill only scores from evidence that passes two tests:
    - the quote really is in the résumé (normalised, with a 90% fuzzy match to absorb PDF line-wrap noise), **and**
    - it actually names the skill. A real résumé line about PyTorch is not evidence for Python.
@@ -65,7 +77,7 @@ Keys for cloud providers are entered in the page and live **only in React state 
 | The screen | Once entered, only the last four characters are shown (`…WXYZ`). |
 | The network | Sent only to this app's own server, only as an `X-LLM-Key` request header, only on requests that call a model. Never in a URL or body, so it can't end up in an access log. |
 | The server | Read from the header, handed to the provider SDK, and dropped when the request ends. Never saved to the database, a file or a cache. |
-| Logs and error pages | A log filter redacts any key seen in the current request, plus anything shaped like an OpenAI, Anthropic or Google key, including inside tracebacks. Django's error reports hide the header and any local variable holding a key. Provider errors are mapped to fixed messages ("The provider rejected the API key."), so an SDK message that quotes your key never reaches the browser. |
+| Logs and error pages | A log filter redacts any key seen in the current request, plus anything shaped like an OpenAI, Anthropic, OpenRouter, Groq or Google key, including inside tracebacks. Django's error reports hide the header and any local variable holding a key. Provider errors are mapped to fixed messages ("The provider rejected the API key."), so an SDK message that quotes your key never reaches the browser. |
 | Other websites | No CORS. The page and the API share one origin. Every state-changing request must carry a custom `X-Resume-Quest` header, which another site can't add without a CORS preflight this server never approves. `ALLOWED_HOSTS` is localhost-only, which also blocks DNS rebinding. |
 | Injected scripts | Strict Content-Security-Policy: `script-src 'self'`, no inline scripts, no CDNs. Fonts are self-hosted, so no third-party code ever runs on the page holding your key. |
 
@@ -105,8 +117,8 @@ cd resume_summarizer_backend
 
 ```bash
 .venv/bin/pip install -r requirements-dev.txt
-cd resume_summarizer_backend && ../.venv/bin/pytest      # 94 tests
-cd resume_summarizer_frontend && npm test                # 12 tests
+cd resume_summarizer_backend && ../.venv/bin/pytest      # 102 tests
+cd resume_summarizer_frontend && npm test                # 13 tests
 ```
 
 The backend tests never call a real model. Each provider adapter is tested against a mocked SDK (request shape, error mapping, refusals), and the API runs end to end with an offline keyword-matching provider that only exists when `ENABLE_FAKE_PROVIDER=True`. CI runs both suites and the production build on every push.
@@ -116,7 +128,8 @@ The backend tests never call a real model. Each provider adapter is tested again
 ```
 resume_summarizer_backend/
   analyzer/
-    llm/              one adapter per provider + the shared JSON call with retry
+    llm/              one adapter per provider (Groq and OpenRouter share an
+                      OpenAI-compatible one) + the shared JSON call with retry
     extract.py        PDF/DOCX → text, in memory
     analytics.py      quote verification, résumé scan, skill scoring, quality checks
     testing.py        quiz targets, option shuffling, grading
@@ -131,7 +144,7 @@ samples/              fictional sample résumé (txt, PDF, DOCX) + the script th
 
 ## Known limitations
 
-- The Ollama path is verified end to end against a real model. The OpenAI, Anthropic and Gemini adapters are verified against mocked SDKs, and the OpenAI one against the real API's "invalid key" response. They haven't had a successful run with a real paid key yet.
+- The Ollama path is verified end to end against a real model. The cloud adapters are verified against mocked SDKs. OpenAI, Groq and OpenRouter were also checked against their real APIs' "invalid key" responses, and OpenRouter's live free-model list. None has had a successful run with a real key yet.
 - Quality depends on the model. A 4B local model gets role fits and categories right but writes the occasional shaky quiz question. The verification and scanning steps exist so that skill scores don't depend on it.
 - Scanned (image-only) PDFs have no text layer and are rejected rather than OCR'd.
 - Quiz verdicts rest on one to three questions per skill: a prompt to dig in, not a judgement.
