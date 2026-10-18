@@ -105,7 +105,7 @@ cd resume_summarizer_backend
 
 ```bash
 .venv/bin/pip install -r requirements-dev.txt
-cd resume_summarizer_backend && ../.venv/bin/pytest      # 91 tests
+cd resume_summarizer_backend && ../.venv/bin/pytest      # 94 tests
 cd resume_summarizer_frontend && npm test                # 12 tests
 ```
 
