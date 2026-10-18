@@ -38,6 +38,8 @@ class ProviderInfo:
     needs_key: bool
     default_model: str
     key_hint: str = ""
+    free_tier: bool = False  # the provider hands out keys with a no-cost tier
+    key_url: str = ""        # where to create a key
 
 
 class Provider:

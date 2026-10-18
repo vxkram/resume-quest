@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from .anthropic_provider import AnthropicProvider
 from .base import ProviderError
+from .compatible_providers import GroqProvider, OpenRouterProvider
 from .fake_provider import FakeProvider
 from .gemini_provider import GeminiProvider
 from .ollama_provider import OllamaProvider
@@ -14,7 +15,9 @@ from .openai_provider import OpenAIProvider
 
 logger = logging.getLogger(__name__)
 
-_PROVIDERS = {p.info.id: p for p in (OpenAIProvider(), AnthropicProvider(), GeminiProvider(), OllamaProvider())}
+_PROVIDERS = {p.info.id: p for p in (
+    OpenAIProvider(), AnthropicProvider(), GeminiProvider(), GroqProvider(), OpenRouterProvider(), OllamaProvider(),
+)}
 _FAKE = FakeProvider()
 
 

@@ -8,11 +8,13 @@ from analyzer.models import Analysis, Quiz
 pytestmark = pytest.mark.django_db
 
 
-def test_providers_list_includes_all_four_and_the_test_provider(api):
+def test_providers_list_includes_every_provider_and_the_test_provider(api):
     providers = {p["id"]: p for p in api.get("/api/providers/").json()}
-    assert set(providers) == {"openai", "anthropic", "gemini", "ollama", "fake"}
+    assert set(providers) == {"openai", "anthropic", "gemini", "groq", "openrouter", "ollama", "fake"}
     assert providers["ollama"]["needs_key"] is False
     assert providers["anthropic"]["needs_key"] is True
+    assert {p for p, info in providers.items() if info["free_tier"]} == {"gemini", "groq", "openrouter"}
+    assert providers["groq"]["key_url"].startswith("https://")
 
 
 def test_fake_provider_hidden_unless_enabled(api, settings):

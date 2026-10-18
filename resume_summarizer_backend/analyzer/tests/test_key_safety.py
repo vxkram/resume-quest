@@ -191,6 +191,8 @@ def test_redact_patterns():
     assert redact(f"key={SENTINEL}") == "key=[REDACTED]"
     assert "sk-ant-api03" not in redact("sk-ant-api03-abcdefghijklmnopqrstuvwxyz")
     assert "AIzaSy" not in redact("AIzaSyA1234567890abcdefghijklmnopqrs")
+    assert "gsk_" not in redact("gsk_abcdefghijklmnopqrstuvwxyz0123")
+    assert "sk-or-v1" not in redact("sk-or-v1-0123456789abcdef0123456789")
     assert redact('{"x-api-key": "whatever-123"}') == '{"x-api-key": "[REDACTED]"}'
     assert redact("nothing secret here") == "nothing secret here"
 

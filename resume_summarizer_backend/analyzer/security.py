@@ -32,6 +32,7 @@ KEY_PATTERNS = [
     re.compile(r"sk-ant-[A-Za-z0-9_\-]{8,}"),
     re.compile(r"sk-[A-Za-z0-9_\-]{16,}"),
     re.compile(r"AIza[0-9A-Za-z_\-]{20,}"),
+    re.compile(r"gsk_[A-Za-z0-9]{20,}"),
     re.compile(r"(?i)(x-llm-key|authorization|x-api-key|x-goog-api-key)(['\"]?\s*[:=]\s*['\"]?)([^\s'\",}]+)"),
 ]
 

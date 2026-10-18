@@ -78,7 +78,8 @@ class ProvidersView(APIView):
     def get(self, request):
         return Response([
             {"id": p.info.id, "label": p.info.label, "needs_key": p.info.needs_key,
-             "default_model": p.info.default_model, "key_hint": p.info.key_hint}
+             "default_model": p.info.default_model, "key_hint": p.info.key_hint,
+             "free_tier": p.info.free_tier, "key_url": p.info.key_url}
             for p in available_providers()
         ])
 

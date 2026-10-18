@@ -260,3 +260,85 @@ def test_quiz_validation_drops_broken_questions():
         {**ANSWER["questions"][0], "answer_index": 7},                   # answer out of range
     ]}
     assert len(QuizOut.model_validate(raw).questions) == 4
+
+
+# --- Groq and OpenRouter (OpenAI-compatible) ---------------------------------
+
+from analyzer.llm.compatible_providers import GroqProvider, OpenRouterProvider  # noqa: E402
+
+
+def chat_response(content, finish_reason="stop"):
+    return SimpleNamespace(choices=[SimpleNamespace(
+        finish_reason=finish_reason, message=SimpleNamespace(content=content))])
+
+
+def test_groq_uses_strict_schema_on_gpt_oss(monkeypatch):
+    client = MagicMock()
+    client.chat.completions.create.return_value = chat_response(json.dumps(ANSWER))
+    factory = mock_client(monkeypatch, openai, "OpenAI", client)
+
+    assert GroqProvider().complete_json(**{**CALL, "model": "openai/gpt-oss-120b"}) == ANSWER
+    assert factory.call_args.kwargs["base_url"] == "https://api.groq.com/openai/v1"
+    assert factory.call_args.kwargs["api_key"] == "sk-test-key-123456789"
+    kwargs = client.chat.completions.create.call_args.kwargs
+    assert kwargs["response_format"] == {"type": "json_schema", "json_schema": {
+        "name": "quiz", "schema": QUIZ_SCHEMA, "strict": True}}
+    assert kwargs["messages"][0] == {"role": "system", "content": "sys"}
+
+
+def test_groq_falls_back_to_json_mode_with_the_schema_in_the_prompt(monkeypatch):
+    client = MagicMock()
+    client.chat.completions.create.return_value = chat_response(json.dumps(ANSWER))
+    mock_client(monkeypatch, openai, "OpenAI", client)
+
+    GroqProvider().complete_json(**{**CALL, "model": "llama-3.3-70b-versatile"})
+    kwargs = client.chat.completions.create.call_args.kwargs
+    assert kwargs["response_format"] == {"type": "json_object"}
+    assert '"answer_index"' in kwargs["messages"][0]["content"]
+
+
+def test_openrouter_only_routes_to_providers_that_honour_the_schema(monkeypatch):
+    client = MagicMock()
+    client.chat.completions.create.return_value = chat_response(json.dumps(ANSWER))
+    factory = mock_client(monkeypatch, openai, "OpenAI", client)
+
+    OpenRouterProvider().complete_json(**{**CALL, "model": "openrouter/free"})
+    assert factory.call_args.kwargs["base_url"] == "https://openrouter.ai/api/v1"
+    kwargs = client.chat.completions.create.call_args.kwargs
+    assert kwargs["extra_body"] == {"provider": {"require_parameters": True}}
+    assert kwargs["response_format"]["json_schema"]["strict"] is True
+
+
+@pytest.mark.parametrize("exc, code", [
+    (openai.AuthenticationError("bad", response=fake_response(401), body=None), "invalid_key"),
+    (openai.RateLimitError("free limit", response=fake_response(429), body=None), "rate_limited"),
+    (openai.APIStatusError("credits", response=fake_response(402), body=None), "no_credits"),
+])
+def test_compatible_provider_errors(monkeypatch, exc, code):
+    client = MagicMock()
+    client.chat.completions.create.side_effect = exc
+    mock_client(monkeypatch, openai, "OpenAI", client)
+    with pytest.raises(ProviderError) as raised:
+        OpenRouterProvider().complete_json(**CALL)
+    assert raised.value.code == code
+
+
+def test_truncated_answer_is_bad_output(monkeypatch):
+    client = MagicMock()
+    client.chat.completions.create.return_value = chat_response('{"questions": [', "length")
+    mock_client(monkeypatch, openai, "OpenAI", client)
+    with pytest.raises(ProviderError) as raised:
+        GroqProvider().complete_json(**CALL)
+    assert raised.value.code == "bad_output"
+
+
+def test_model_lists_keep_only_usable_models(monkeypatch):
+    client = MagicMock()
+    mock_client(monkeypatch, openai, "OpenAI", client)
+    client.models.list.return_value = [SimpleNamespace(id=i) for i in [
+        "openai/gpt-oss-120b", "whisper-large-v3", "llama-3.3-70b-versatile", "meta-llama/llama-guard-4-12b"]]
+    assert GroqProvider().list_models(api_key="k") == ["llama-3.3-70b-versatile", "openai/gpt-oss-120b"]
+    client.models.list.return_value = [SimpleNamespace(id=i) for i in [
+        "openrouter/free", "deepseek/deepseek-chat:free", "anthropic/claude-opus-5-5",
+        "nvidia/nemotron-3.5-content-safety:free"]]
+    assert OpenRouterProvider().list_models(api_key="k") == ["deepseek/deepseek-chat:free", "openrouter/free"]

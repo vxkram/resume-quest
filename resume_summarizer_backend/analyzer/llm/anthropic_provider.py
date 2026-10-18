@@ -21,7 +21,8 @@ def _translate(exc):
 
 
 class AnthropicProvider(Provider):
-    info = ProviderInfo("anthropic", "Anthropic", True, "claude-opus-5-5", "sk-ant-…")
+    info = ProviderInfo("anthropic", "Anthropic", True, "claude-opus-5-5", "sk-ant-…",
+                        key_url="https://platform.claude.com/settings/keys")
 
     def _client(self, api_key):
         return anthropic.Anthropic(api_key=api_key, max_retries=1, timeout=300)

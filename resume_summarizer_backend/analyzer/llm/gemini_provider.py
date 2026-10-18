@@ -20,7 +20,8 @@ def _translate(exc):
 
 
 class GeminiProvider(Provider):
-    info = ProviderInfo("gemini", "Google Gemini", True, "gemini-2.5-flash", "AIza…")
+    info = ProviderInfo("gemini", "Google Gemini", True, "gemini-2.5-flash", "AIza…",
+                        free_tier=True, key_url="https://aistudio.google.com/apikey")
 
     def complete_json(self, *, system, prompt, schema, schema_name, api_key, model):
         try:
