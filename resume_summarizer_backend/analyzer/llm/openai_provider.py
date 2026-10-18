@@ -11,7 +11,8 @@ def _translate(exc):
     if isinstance(exc, (openai.AuthenticationError, openai.PermissionDeniedError)):
         return ProviderError("invalid_key")
     if isinstance(exc, openai.RateLimitError):
-        return ProviderError("rate_limited")
+        # OpenAI uses 429 both for "slow down" and for "no credit left".
+        return ProviderError("no_credits" if exc.code == "insufficient_quota" else "rate_limited")
     if isinstance(exc, openai.NotFoundError):
         return ProviderError("model_not_found")
     if isinstance(exc, (openai.APIConnectionError, openai.APITimeoutError)):

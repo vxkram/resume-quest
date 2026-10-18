@@ -11,6 +11,8 @@ def _translate(exc):
         return ProviderError("invalid_key")
     if isinstance(exc, anthropic.RateLimitError):
         return ProviderError("rate_limited")
+    if isinstance(exc, anthropic.BadRequestError) and "credit balance" in str(exc.body).lower():
+        return ProviderError("no_credits")
     if isinstance(exc, anthropic.NotFoundError):
         return ProviderError("model_not_found")
     if isinstance(exc, (anthropic.APIConnectionError, anthropic.APITimeoutError)):

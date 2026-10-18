@@ -14,6 +14,8 @@ class ProviderError(Exception):
     MESSAGES = {
         "invalid_key": (401, "The provider rejected the API key."),
         "rate_limited": (429, "The provider is rate limiting this key. Try again shortly."),
+        "no_credits": (402, "This key's account is out of credit or has hit its spending limit. "
+                            "Check billing with the provider, or use Ollama for free."),
         "model_not_found": (400, "That model isn't available for this key."),
         "unreachable": (503, "Couldn't reach the provider."),
         "bad_output": (502, "The model didn't return usable JSON. Try again or pick a stronger model."),

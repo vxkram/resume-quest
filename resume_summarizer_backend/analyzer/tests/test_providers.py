@@ -57,6 +57,8 @@ def test_openai_uses_strict_json_schema(monkeypatch):
 @pytest.mark.parametrize("exc, code", [
     (openai.AuthenticationError("bad key sk-test-key-123456789", response=fake_response(401), body=None), "invalid_key"),
     (openai.RateLimitError("slow down", response=fake_response(429), body=None), "rate_limited"),
+    (openai.RateLimitError("You exceeded your current quota", response=fake_response(429),
+                           body={"code": "insufficient_quota", "type": "insufficient_quota"}), "no_credits"),
     (openai.NotFoundError("no model", response=fake_response(404), body=None), "model_not_found"),
     (openai.APIConnectionError(request=httpx.Request("POST", "https://x")), "unreachable"),
     (openai.InternalServerError("boom", response=fake_response(500), body=None), "provider_error"),
@@ -121,6 +123,17 @@ def test_anthropic_stop_reasons(monkeypatch, stop_reason, code):
     assert raised.value.code == code
 
 
+def test_anthropic_low_credit(monkeypatch):
+    client = MagicMock()
+    client.messages.create.side_effect = anthropic.BadRequestError(
+        "credit", response=fake_response(400), body={"type": "error", "error": {
+            "type": "invalid_request_error", "message": "Your credit balance is too low to access the Anthropic API."}})
+    mock_client(monkeypatch, anthropic, "Anthropic", client)
+    with pytest.raises(ProviderError) as raised:
+        AnthropicProvider().complete_json(**{**CALL, "model": "claude-haiku-5-5"})
+    assert raised.value.code == "no_credits" and raised.value.status == 402
+
+
 def test_anthropic_bad_key(monkeypatch):
     client = MagicMock()
     client.messages.create.side_effect = anthropic.AuthenticationError(
@@ -151,7 +164,8 @@ def test_gemini_uses_response_json_schema(monkeypatch):
 @pytest.mark.parametrize("code, message, expected", [
     (400, "API key not valid. API_KEY_INVALID", "invalid_key"),
     (403, "forbidden", "invalid_key"),
-    (429, "quota", "rate_limited"),
+    (429, "Quota exceeded for metric generate_content_free_tier_requests", "no_credits"),
+    (429, "Too many requests", "rate_limited"),
     (404, "no such model", "model_not_found"),
 ])
 def test_gemini_errors(monkeypatch, code, message, expected):
