@@ -5,7 +5,15 @@ import { maskKey, useSession } from "../session";
 import { ErrorNote } from "./ErrorNote";
 import { Sprite } from "./Sprite";
 
-const GEM_COLORS = { openai: "#00e436", anthropic: "#ffa300", gemini: "#29adff", ollama: "#ff77a8", fake: "#c2c3c7" };
+const GEM_COLORS = {
+  openai: "#00e436", anthropic: "#ffa300", gemini: "#29adff", groq: "#ff004d",
+  openrouter: "#83769c", ollama: "#ff77a8", fake: "#c2c3c7",
+};
+
+function costNote(p) {
+  if (!p.needs_key) return "Free, runs on this computer";
+  return p.free_tier ? "Free API key" : "Paid API key";
+}
 
 export function ProviderPicker() {
   const { providers, providersError, provider, setProvider } = useSession();
@@ -19,7 +27,7 @@ export function ProviderPicker() {
           <input type="radio" name="provider" value={p.id} checked={provider === p.id} onChange={() => setProvider(p.id)} />
           <Sprite name="gem" scale={3} color={GEM_COLORS[p.id]} />
           <span>{p.label}</span>
-          <small>{p.needs_key ? "Your API key" : "Free, runs on this computer"}</small>
+          <small>{costNote(p)}</small>
         </label>
       ))}
     </fieldset>
@@ -139,6 +147,14 @@ export function KeyField() {
             Use key
           </button>
         </div>
+      )}
+      {info.key_url && (
+        <p className="hint">
+          <a href={info.key_url} target="_blank" rel="noopener noreferrer">
+            {info.free_tier ? "Get a free key" : "Get a key"}
+          </a>{" "}
+          from {info.label}.
+        </p>
       )}
       <p className="hint">
         Held in this tab's memory only: never saved to disk or browser storage. It goes to this app's local server,

@@ -1,5 +1,6 @@
 export const PROVIDERS = [
-  { id: "openai", label: "OpenAI", needs_key: true, default_model: "gpt-5-mini", key_hint: "sk-…" },
+  { id: "openai", label: "OpenAI", needs_key: true, default_model: "gpt-5-mini", key_hint: "sk-…", free_tier: false, key_url: "https://platform.openai.com/api-keys" },
+  { id: "groq", label: "Groq", needs_key: true, default_model: "openai/gpt-oss-120b", key_hint: "gsk_…", free_tier: true, key_url: "https://console.groq.com/keys" },
   { id: "ollama", label: "Ollama (local)", needs_key: false, default_model: "qwen3.5:4b", key_hint: "" },
 ];
 

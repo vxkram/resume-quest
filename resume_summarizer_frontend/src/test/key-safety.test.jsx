@@ -93,6 +93,17 @@ describe("API key handling in the browser", () => {
     expect(window.__llm).toEqual({ provider: "ollama", model: "qwen3.5:4b", apiKey: "" });
   });
 
+  it("labels free and paid providers and links to where keys come from", async () => {
+    const user = userEvent.setup();
+    setup();
+    expect(screen.getByText("Free API key")).toBeInTheDocument();
+    expect(screen.getByText("Paid API key")).toBeInTheDocument();
+    await user.click(screen.getByLabelText(/Groq/));
+    const link = screen.getByRole("link", { name: "Get a free key" });
+    expect(link).toHaveAttribute("href", "https://console.groq.com/keys");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
   it("masks keys", () => {
     expect(maskKey(KEY)).toBe("…WXYZ");
     expect(maskKey("short")).toBe("…");
