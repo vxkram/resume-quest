@@ -1,5 +1,7 @@
 # Résumé Quest
 
+[![tests](https://github.com/vxkram/resume-summarizer/actions/workflows/ci.yml/badge.svg)](https://github.com/vxkram/resume-summarizer/actions/workflows/ci.yml)
+
 A local résumé analyser with a pixel-art RPG interface. Drop in a PDF or DOCX résumé and it tells you:
 
 - **What the résumé is for:** the three job titles it's best aimed at, with a confidence score each, plus seniority and domain.
