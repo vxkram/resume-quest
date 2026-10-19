@@ -1,6 +1,33 @@
 // The only place the app talks to the server. The API key, when there is one, is
 // added as the X-LLM-Key header on the requests that need it and nowhere else:
 // never in a URL, never in a body, never in storage.
+//
+// Every request also carries this browser's save token (X-Save-Token). On the
+// hosted site the server uses it to show each browser only its own saves; run
+// locally, the server ignores it. It is a random value, not a secret about you.
+
+const SAVE_TOKEN = "resume-quest:save-token";
+let memoryToken = null;
+
+function newToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function saveToken() {
+  try {
+    let token = localStorage.getItem(SAVE_TOKEN);
+    if (!token) {
+      token = newToken();
+      localStorage.setItem(SAVE_TOKEN, token);
+    }
+    return token;
+  } catch {
+    // Storage blocked: saves last as long as this tab.
+    memoryToken ??= newToken();
+    return memoryToken;
+  }
+}
 
 export class ApiError extends Error {
   constructor(status, code, detail) {
@@ -11,7 +38,7 @@ export class ApiError extends Error {
 }
 
 async function request(path, { method = "GET", json, form, apiKey } = {}) {
-  const headers = { "X-Resume-Quest": "1" };
+  const headers = { "X-Resume-Quest": "1", "X-Save-Token": saveToken() };
   if (apiKey) headers["X-LLM-Key"] = apiKey;
   let body;
   if (form) {
@@ -50,6 +77,7 @@ async function request(path, { method = "GET", json, form, apiKey } = {}) {
 const llmBody = ({ provider, model }) => ({ provider, model });
 
 export const api = {
+  config: () => request("/config/"),
   providers: () => request("/providers/"),
   models: (provider, apiKey) => request(`/providers/${provider}/models/`, { apiKey }),
   analyse(file, llm) {

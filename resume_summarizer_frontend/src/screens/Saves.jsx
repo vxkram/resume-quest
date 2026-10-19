@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { api } from "../api";
 import { ErrorNote } from "../components/ErrorNote";
 import { Window } from "../components/Window";
+import { useSession } from "../session";
 import { SENIORITY } from "./labels";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -40,6 +41,7 @@ function Slot({ save, onDelete }) {
 }
 
 export function Saves() {
+  const { config } = useSession();
   const [saves, setSaves] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
@@ -57,10 +59,17 @@ export function Saves() {
 
   return (
     <Window title="Save files">
-      <p className="muted">
-        Analyses are stored in a local database on this computer, along with the résumé's text. Deleting one removes
-        both.
-      </p>
+      {config.hosted ? (
+        <p className="muted">
+          Analyses are kept on this site's server for {config.save_hours} hours, along with the résumé's text, and
+          only this browser can see them. After that, or when you delete one, both are gone for good.
+        </p>
+      ) : (
+        <p className="muted">
+          Analyses are stored in a local database on this computer, along with the résumé's text. Deleting one removes
+          both.
+        </p>
+      )}
       <ErrorNote error={error} />
       {saves && saves.length === 0 && (
         <p>
