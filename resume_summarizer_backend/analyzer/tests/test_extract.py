@@ -38,9 +38,9 @@ def test_file_name_and_content_type_are_ignored(sample_pdf):
 
 
 def test_rejects_oversized_upload(settings, sample_pdf):
-    settings.MAX_UPLOAD_BYTES = 100
-    with pytest.raises(BadUpload, match="5 MB"):
-        extract_text(SimpleUploadedFile("cv.pdf", sample_pdf))
+    settings.MAX_UPLOAD_BYTES = 1024 * 1024
+    with pytest.raises(BadUpload, match="1 MB"):
+        extract_text(SimpleUploadedFile("cv.pdf", sample_pdf + b"\0" * settings.MAX_UPLOAD_BYTES))
 
 
 def test_rejects_nearly_empty_document():

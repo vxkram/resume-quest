@@ -1,4 +1,6 @@
+import hashlib
 import re
+from datetime import timedelta
 
 from django.conf import settings
 from django.http import Http404, HttpResponse
@@ -22,6 +24,7 @@ from .security import read_api_key
 
 MODEL_NAME = re.compile(r"^[\w.:/\-]{1,100}$")
 SAFE_FILE_NAME = re.compile(r"[^\w.\- ]")
+SAVE_TOKEN = re.compile(r"^[A-Za-z0-9_\-]{32,128}$")
 
 sensitive = method_decorator(sensitive_variables("api_key"))
 
@@ -38,6 +41,32 @@ def _provider_and_model(data):
 
 def _key_for(request, provider):
     return read_api_key(request) if provider.info.needs_key else ""
+
+
+def _owner(request):
+    """Hosted: a hash of this browser's save token. Local: None, since one user sees everything."""
+    if not settings.HOSTED:
+        return None
+    token = request.META.get("HTTP_X_SAVE_TOKEN", "")
+    if not SAVE_TOKEN.match(token):
+        raise ValidationError({"detail": "Missing or malformed X-Save-Token header."})
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _expiry_cutoff():
+    return timezone.now() - timedelta(hours=settings.SAVE_RETENTION_HOURS)
+
+
+def _analyses(request):
+    """The analyses this request may see: all of them locally, only its own unexpired ones when hosted."""
+    owner = _owner(request)
+    if owner is None:
+        return Analysis.objects.all()
+    return Analysis.objects.filter(owner=owner, created_at__gte=_expiry_cutoff())
+
+
+def _quizzes(request):
+    return Quiz.objects.filter(analysis__in=_analyses(request))
 
 
 def analysis_payload(analysis, full=True):
@@ -74,6 +103,15 @@ def _latest_quiz(analysis):
             "score": quiz.result["score"] if quiz.result else None}
 
 
+class ConfigView(APIView):
+    def get(self, request):
+        return Response({
+            "hosted": settings.HOSTED,
+            "save_hours": settings.SAVE_RETENTION_HOURS if settings.HOSTED else None,
+            "max_upload_mb": settings.MAX_UPLOAD_BYTES // (1024 * 1024),
+        })
+
+
 class ProvidersView(APIView):
     def get(self, request):
         return Response([
@@ -96,10 +134,11 @@ class ProviderModelsView(APIView):
 
 class AnalysisListView(APIView):
     def get(self, request):
-        return Response([analysis_payload(a, full=False) for a in Analysis.objects.all()[:50]])
+        return Response([analysis_payload(a, full=False) for a in _analyses(request)[:50]])
 
     @sensitive
     def post(self, request):
+        owner = _owner(request)
         provider, model = _provider_and_model(request.data)
         api_key = _key_for(request, provider)
         upload = request.FILES.get("file")
@@ -113,8 +152,10 @@ class AnalysisListView(APIView):
         skills = analytics.score_skills(result.skills, text)
         profile = result.model_dump(exclude={"skills"})
         name = SAFE_FILE_NAME.sub("", upload.name)[:120] or f"resume.{kind}"
+        if owner is not None:
+            Analysis.objects.filter(created_at__lt=_expiry_cutoff()).delete()
         analysis = Analysis.objects.create(
-            file_name=name, file_kind=kind, resume_text=text,
+            owner=owner or "", file_name=name, file_kind=kind, resume_text=text,
             provider=provider.info.id, model=model, profile=profile,
             skills=skills, quality=analytics.resume_quality(text),
         )
@@ -123,17 +164,17 @@ class AnalysisListView(APIView):
 
 class AnalysisDetailView(APIView):
     def get(self, request, pk):
-        return Response(analysis_payload(get_object_or_404(Analysis, pk=pk)))
+        return Response(analysis_payload(get_object_or_404(_analyses(request), pk=pk)))
 
     def delete(self, request, pk):
-        get_object_or_404(Analysis, pk=pk).delete()
+        get_object_or_404(_analyses(request), pk=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class QuizCreateView(APIView):
     @sensitive
     def post(self, request, pk):
-        analysis = get_object_or_404(Analysis, pk=pk)
+        analysis = get_object_or_404(_analyses(request), pk=pk)
         provider, model = _provider_and_model(request.data)
         api_key = _key_for(request, provider)
         targets = testing.quiz_targets(analysis.skills)
@@ -162,12 +203,12 @@ def quiz_payload(quiz):
 
 class QuizDetailView(APIView):
     def get(self, request, pk):
-        return Response(quiz_payload(get_object_or_404(Quiz, pk=pk)))
+        return Response(quiz_payload(get_object_or_404(_quizzes(request), pk=pk)))
 
 
 class QuizSubmitView(APIView):
     def post(self, request, pk):
-        quiz = get_object_or_404(Quiz.objects.select_related("analysis"), pk=pk)
+        quiz = get_object_or_404(_quizzes(request).select_related("analysis"), pk=pk)
         if quiz.result is not None:
             raise ValidationError({"detail": "This quiz was already submitted."})
         answers = request.data.get("answers")
@@ -185,7 +226,7 @@ class QuizSubmitView(APIView):
 class InterviewView(APIView):
     @sensitive
     def post(self, request, pk):
-        analysis = get_object_or_404(Analysis, pk=pk)
+        analysis = get_object_or_404(_analyses(request), pk=pk)
         provider, model = _provider_and_model(request.data)
         api_key = _key_for(request, provider)
         targets = testing.interview_targets(analysis.skills)
