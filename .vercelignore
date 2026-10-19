@@ -1,0 +1,8 @@
+.venv/
+samples/
+docs/
+resume_summarizer_backend/db.sqlite3
+resume_summarizer_backend/resumes/
+resume_summarizer_backend/saved_jsons/
+resume_summarizer_backend/.env
+resume_summarizer_frontend/node_modules/
