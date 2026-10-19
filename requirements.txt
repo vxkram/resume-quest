@@ -8,3 +8,5 @@ httpx==0.28.1
 openai==3.35.1
 anthropic==1.15.0
 google-genai==2.31.0
+dj-database-url==3.1.2
+psycopg[binary]==3.3.6

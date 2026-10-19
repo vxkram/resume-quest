@@ -1,14 +1,16 @@
 """
 Django settings for the resume analyzer.
 
-This is a local, single-user app: it binds to localhost, keeps its data in a
-local SQLite file and never stores LLM API keys (they arrive per request in the
-X-LLM-Key header and are dropped when the request ends).
+Locally this is a single-user app: it binds to localhost and keeps its data in
+a local SQLite file. With RESUME_QUEST_HOSTED=True it runs as a public site
+instead (see "Hosted mode" below). Either way it never stores LLM API keys (they
+arrive per request in the X-LLM-Key header and are dropped when the request ends).
 """
 
 from pathlib import Path
 import os
 
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -58,11 +60,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "resume_summarizer_backend.wsgi.application"
 
+# DATABASE_URL (Postgres) when hosted; the local SQLite file otherwise.
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=0, conn_health_checks=True,
+    )
 }
 
 LANGUAGE_CODE = "en-us"
@@ -77,8 +79,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # and the API share one origin and no CORS is needed.
 FRONTEND_DIST = REPO_DIR / "resume_summarizer_frontend" / "dist"
 
+# Hosted mode: a public site where strangers share one server. Each browser
+# sends a random save token (X-Save-Token) and only ever sees its own analyses,
+# analyses are deleted after SAVE_RETENTION_HOURS, and Ollama is hidden because
+# there is no local model next to the server.
+HOSTED = os.environ.get("RESUME_QUEST_HOSTED", "False") == "True"
+SAVE_RETENTION_HOURS = int(os.environ.get("SAVE_RETENTION_HOURS", "24"))
+
 # Uploads: keep the whole file in memory (never written to disk) and cap it.
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+# Vercel rejects request bodies over 4.5 MB, so the hosted cap is lower.
+MAX_UPLOAD_BYTES = (4 if HOSTED else 5) * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES + 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES + 1024
 FILE_UPLOAD_HANDLERS = ["django.core.files.uploadhandler.MemoryFileUploadHandler"]
