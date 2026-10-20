@@ -23,6 +23,9 @@ _FAKE = FakeProvider()
 
 def available_providers():
     providers = list(_PROVIDERS.values())
+    if settings.HOSTED:
+        # A public server has no local model to talk to.
+        providers = [p for p in providers if not isinstance(p, OllamaProvider)]
     if settings.ENABLE_FAKE_PROVIDER:
         providers.append(_FAKE)
     return providers

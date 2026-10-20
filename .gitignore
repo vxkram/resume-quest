@@ -20,3 +20,5 @@ resume_summarizer_backend/saved_jsons/
 node_modules/
 resume_summarizer_frontend/dist/
 .DS_Store
+.vercel
+.env*.local

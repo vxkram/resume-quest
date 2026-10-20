@@ -8,7 +8,6 @@ import { Loading } from "../components/Loading";
 import { Window } from "../components/Window";
 import { useSession } from "../session";
 
-const MAX_BYTES = 5 * 1024 * 1024;
 const STEPS = [
   "Reading the résumé…",
   "Working out which roles it's aimed at…",
@@ -31,7 +30,8 @@ export function Title() {
     setError(null);
     if (!chosen) return;
     if (!/\.(pdf|docx)$/i.test(chosen.name)) return setError(new Error("Choose a PDF or DOCX file."));
-    if (chosen.size > MAX_BYTES) return setError(new Error("That file is over the 5 MB limit."));
+    const maxMb = session.config.max_upload_mb;
+    if (chosen.size > maxMb * 1024 * 1024) return setError(new Error(`That file is over the ${maxMb} MB limit.`));
     setFile(chosen);
   };
 
@@ -94,7 +94,7 @@ export function Title() {
               ) : (
                 <span className="cartridge-label">
                   <strong>Drop a PDF or DOCX here</strong>
-                  <small>or click to choose (5 MB max)</small>
+                  <small>or click to choose ({session.config.max_upload_mb} MB max)</small>
                 </span>
               )}
             </label>

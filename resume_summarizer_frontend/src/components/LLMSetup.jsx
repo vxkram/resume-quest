@@ -94,7 +94,7 @@ export function ModelField() {
 }
 
 export function KeyField() {
-  const { info, apiKey, setApiKey, forgetKey } = useSession();
+  const { config, info, apiKey, setApiKey, forgetKey } = useSession();
   const [draft, setDraft] = useState("");
   const [show, setShow] = useState(false);
   const id = useId();
@@ -157,8 +157,8 @@ export function KeyField() {
         </p>
       )}
       <p className="hint">
-        Held in this tab's memory only: never saved to disk or browser storage. It goes to this app's local server,
-        which hands it to {info.label} for each request and keeps no copy. Reloading the page, or 30 idle minutes,
+        Held in this tab's memory only: never saved to disk or browser storage. It goes to this app's
+        {config.hosted ? "" : " local"} server, which hands it to {info.label} for each request and keeps no copy. Reloading the page, or 30 idle minutes,
         forgets it.
       </p>
     </div>

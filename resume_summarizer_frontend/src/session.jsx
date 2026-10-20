@@ -25,7 +25,11 @@ export function maskKey(key) {
   return key.length > 12 ? `…${key.slice(-4)}` : "…";
 }
 
-export function SessionProvider({ children, initialProviders = null }) {
+// What the server says about where it runs; local defaults until it answers.
+export const LOCAL_CONFIG = { hosted: false, save_hours: null, max_upload_mb: 5 };
+
+export function SessionProvider({ children, initialProviders = null, initialConfig = LOCAL_CONFIG }) {
+  const [config, setConfig] = useState(initialConfig);
   const [providers, setProviders] = useState(initialProviders);
   const [providersError, setProvidersError] = useState(null);
   const [provider, setProviderState] = useState(() => loadPrefs().provider ?? "ollama");
@@ -36,7 +40,16 @@ export function SessionProvider({ children, initialProviders = null }) {
   useEffect(() => {
     if (initialProviders) return;
     api.providers().then(setProviders, (error) => setProvidersError(error.message));
+    api.config().then(setConfig, () => {});
   }, [initialProviders]);
+
+  // A remembered provider may not be offered here (Ollama on the hosted site):
+  // fall back to the first free one.
+  useEffect(() => {
+    if (providers?.length && !providers.some((p) => p.id === provider)) {
+      setProviderState((providers.find((p) => p.free_tier) ?? providers[0]).id);
+    }
+  }, [providers, provider]);
 
   useEffect(() => {
     try {
@@ -59,6 +72,7 @@ export function SessionProvider({ children, initialProviders = null }) {
   const value = useMemo(() => {
     const info = providers?.find((p) => p.id === provider) ?? null;
     return {
+      config,
       providers,
       providersError,
       provider,
@@ -80,7 +94,7 @@ export function SessionProvider({ children, initialProviders = null }) {
         return { provider, model: models[provider] || info?.default_model || "", apiKey: info?.needs_key ? keys[provider] : "" };
       },
     };
-  }, [providers, providersError, provider, models, keys, touch, forgetAllKeys]);
+  }, [config, providers, providersError, provider, models, keys, touch, forgetAllKeys]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

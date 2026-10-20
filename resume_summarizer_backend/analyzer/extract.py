@@ -76,7 +76,7 @@ def extract_text(uploaded):
     if uploaded is None:
         raise BadUpload("Attach a résumé as a PDF or DOCX file.")
     if uploaded.size > settings.MAX_UPLOAD_BYTES:
-        raise BadUpload("That file is over the 5 MB limit.")
+        raise BadUpload(f"That file is over the {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.")
     data = uploaded.read()
     kind = detect_type(data)
     if kind is None:

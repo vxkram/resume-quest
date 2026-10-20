@@ -3,6 +3,7 @@ from django.urls import include, path, re_path
 from analyzer import views
 
 api = [
+    path("config/", views.ConfigView.as_view(), name="config"),
     path("providers/", views.ProvidersView.as_view(), name="providers"),
     path("providers/<str:provider_id>/models/", views.ProviderModelsView.as_view(), name="provider-models"),
     path("analyses/", views.AnalysisListView.as_view(), name="analyses"),

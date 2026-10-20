@@ -8,6 +8,8 @@ class Analysis(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Hosted mode: SHA-256 of the browser's save token. Empty when running locally.
+    owner = models.CharField(max_length=64, blank=True, default="", db_index=True)
     file_name = models.CharField(max_length=120)
     file_kind = models.CharField(max_length=8)
     resume_text = models.TextField()

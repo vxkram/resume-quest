@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "django",
+  "buildCommand": "cd resume_summarizer_frontend && npm ci && npm run build",
+  "functions": {
+    "resume_summarizer_backend/resume_summarizer_backend/wsgi.py": {
+      "maxDuration": 120
+    }
+  }
+}
